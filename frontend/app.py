@@ -28,7 +28,7 @@ if st.button("🔍 Analyze Contract", type="primary") and uploaded_file and role
             f"{BACKEND_URL}/analyze",
             files={"file": (uploaded_file.name, uploaded_file, uploaded_file.type)},
             data={"role": role},
-            timeout=600
+            timeout=1200
         )
         result = response.json()
 

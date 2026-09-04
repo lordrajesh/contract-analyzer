@@ -31,13 +31,16 @@ Return ONLY valid JSON, no explanation, no backticks:
     ]
 }}"""
 
+    print("Sending to Ollama...")
     response = client.chat(
         model=OLLAMA_MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
+    print("Ollama responded!")
+    print(f"Full response object: {response}")
 
     content = response.message.content.strip()
-    print(f"Raw LLM response:\n{content[:500]}")
+    print(f"Raw LLM response:\n{repr(content[:500])}")
 
     # Strip thinking tags
     if "<think>" in content and "</think>" in content:
