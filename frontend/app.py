@@ -65,3 +65,8 @@ if st.button("🔍 Analyze Contract", type="primary") and uploaded_file and role
 
                     st.markdown("**Suggested Improvement:**")
                     st.success(clause.get("suggestion"))
+
+        # Raw Analysis
+        if result.get("raw_analysis"):
+            st.subheader("📋 Full Analysis")
+            st.markdown(result.get("raw_analysis"))

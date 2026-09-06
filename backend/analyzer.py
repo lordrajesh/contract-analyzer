@@ -5,6 +5,39 @@ import json
 client = Client(host=OLLAMA_HOST)
 
 
+def extract_outermost_json(text: str) -> str:
+    """
+    Find the JSON block that contains 'contract_type' — 
+    our expected top-level field. Searches from end backwards
+    since qwen3 puts final answer last in thinking mode.
+    """
+    pos = len(text)
+    while True:
+        end = text.rfind("}", 0, pos)
+        if end == -1:
+            break
+        depth = 0
+        start = -1
+        for i in range(end, -1, -1):
+            if text[i] == "}":
+                depth += 1
+            elif text[i] == "{":
+                depth -= 1
+                if depth == 0:
+                    start = i
+                    break
+        if start != -1:
+            candidate = text[start:end+1]
+            try:
+                parsed = json.loads(candidate)
+                if "contract_type" in parsed:
+                    return candidate
+            except:
+                pass
+        pos = end
+    return None
+
+
 def analyze_contract(text: str, role: str) -> dict:
     prompt = f"""You are an expert contract lawyer analyzing a contract.
 
@@ -13,9 +46,9 @@ The user is the: {role}
 Analyze the following contract strictly from the {role}'s perspective and identify clauses that are risky, unfavorable, or unusual for them.
 
 Contract text:
-{text[:6000]}
+{text}
 
-Return ONLY valid JSON, no explanation, no backticks:
+Return ONLY valid JSON, no explanation, no backticks, no markdown:
 {{
     "contract_type": "type of contract (e.g. Employment Agreement, NDA, Lease Agreement)",
     "overall_risk": "Low or Medium or High",
@@ -31,37 +64,30 @@ Return ONLY valid JSON, no explanation, no backticks:
     ]
 }}"""
 
-    print("Sending to Ollama...")
     response = client.chat(
         model=OLLAMA_MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
-    print("Ollama responded!")
-    print(f"Full response object: {response}")
 
+    print(f"Content length: {len(response.message.content)}")
+    print(f"Thinking length: {len(response.message.thinking) if hasattr(response.message, 'thinking') and response.message.thinking else 0}")
+
+    # Use thinking field if content empty
     content = response.message.content.strip()
-    print(f"Raw LLM response:\n{repr(content[:500])}")
+    if not content and hasattr(response.message, 'thinking') and response.message.thinking:
+        print("Using thinking field")
+        content = response.message.thinking.strip()
 
-    # Strip thinking tags
-    if "<think>" in content and "</think>" in content:
-        content = content.split("</think>")[-1].strip()
+    # Extract correct JSON block
+    extracted = extract_outermost_json(content)
 
-    # Extract JSON from response
-    if "```json" in content:
-        content = content.split("```json")[1].split("```")[0].strip()
-    elif "```" in content:
-        content = content.split("```")[1].split("```")[0].strip()
+    if extracted:
+        print(f"Found JSON: {extracted[:200]}")
+        try:
+            return json.loads(extracted)
+        except json.JSONDecodeError as e:
+            print(f"JSON parse error: {e}")
+            return {"error": f"Parse failed: {str(e)}"}
 
-    # Find JSON object
-    start = content.find("{")
-    end = content.rfind("}") + 1
-    if start != -1 and end > start:
-        content = content[start:end]
-
-    print(f"Cleaned content:\n{content[:500]}")
-
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError as e:
-        print(f"JSON parse error: {e}")
-        return {"error": f"LLM returned invalid JSON: {content[:200]}"}
+    print("No valid JSON found")
+    return {"error": "Could not find valid JSON in response"}
