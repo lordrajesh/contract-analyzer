@@ -46,9 +46,12 @@ The user is the: {role}
 Analyze the following contract strictly from the {role}'s perspective and identify clauses that are risky, unfavorable, or unusual for them.
 
 Contract text:
-{text}
+{text[:8000]}
 
-Return ONLY valid JSON, no explanation, no backticks, no markdown:
+Identify ALL genuinely risky clauses. Be thorough. If the contract has less than 10 risky clauses, flag all of them. If the contract is largely fair, flag only what is truly problematic. Use your best legal judgment — do not invent issues that are not there.
+Return ONLY valid JSON, no explanation, no backticks, no markdown.
+(Important - You MUST end your response with a complete valid JSON object. No text after the JSON.)
+Like below:
 {{
     "contract_type": "type of contract (e.g. Employment Agreement, NDA, Lease Agreement)",
     "overall_risk": "Low or Medium or High",
@@ -56,10 +59,10 @@ Return ONLY valid JSON, no explanation, no backticks, no markdown:
     "summary": "2-3 sentence summary of the contract and overall risk for the {role}",
     "flagged_clauses": [
         {{
-            "clause": "exact or paraphrased text of the risky clause",
-            "risk_level": "Low or Medium or High",
-            "reason": "why this is risky for the {role}",
-            "suggestion": "improved version of this clause that better protects the {role}"
+            "clause": "copy the exact original clause text from the contract verbatim — never leave this empty",
+            "risk_level": "Low or Medium or High — never leave this empty",
+            "reason": "specific explanation of why this clause is risky or unfavorable for the {role} — never leave this empty",
+            "suggestion": "Rewrite this clause verbatim as it would appear in the actual contract, in formal legal language, that is fair and balanced for all parties while better protecting the {role}'s reasonable interests. Write it as a complete contract clause, not as advice or commentary — never leave this empty"
         }}
     ]
 }}"""
