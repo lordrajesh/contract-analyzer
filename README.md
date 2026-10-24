@@ -51,14 +51,11 @@ Legal documents are highly sensitive. Cloud APIs (OpenAI, Claude) would expose y
 ### Prerequisites
 - Python 3.10+
 - Ollama installed ([ollama.com](https://ollama.com))
-- qwen3:30b pulled and qwen3-30b-nothink created (thinking mode disabled for faster responses)
+- qwen3:30b-a3b pulled (MoE variant — faster inference, same quality)
 
 ### Pull Model
 ```bash
-ollama pull qwen3:30b
-ollama show qwen3:30b --modelfile > /tmp/Modelfile
-# Remove <think> line from TEMPLATE in /tmp/Modelfile
-ollama create qwen3-30b-nothink -f /tmp/Modelfile
+ollama pull qwen3:30b-a3b
 ```
 
 ### Setup
